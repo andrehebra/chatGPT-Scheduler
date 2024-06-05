@@ -1,4 +1,5 @@
 import heapq
+import argparse
 from collections import deque
 
 class Process:
@@ -173,5 +174,8 @@ def main(file):
     print_report(process_count, scheduling_type, timeline, wait_times, response_times, turnaround_times, run_for)
 
 if __name__ == "__main__":
-    file = 'input.txt'  # Replace with your input file path
-    main(file)
+    parser = argparse.ArgumentParser(description="Simulate a CPU scheduler.")
+    parser.add_argument("filename", help="The input file containing process information.")
+    args = parser.parse_args()
+    
+    main(args.filename)
