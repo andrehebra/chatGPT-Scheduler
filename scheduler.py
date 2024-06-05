@@ -149,17 +149,18 @@ def round_robin_scheduler(processes, run_for, quantum):
     
     return timeline, wait_times, response_times, turnaround_times
 
-def print_report(process_count, scheduling_type, timeline, wait_times, response_times, turnaround_times, run_for):
-    print(f"{process_count} processes")
-    print(f"Using {scheduling_type}")
-    for event in timeline:
-        print(event)
-    for time in range(run_for, run_for + (run_for - len(timeline))):
-        print(f"Time {time}: Idle")
-    print(f"Finished at time {run_for}")
-    
-    for name in wait_times:
-        print(f"{name} wait {wait_times[name]} turnaround {turnaround_times[name]} response {response_times[name]}")
+def print_report(process_count, scheduling_type, timeline, wait_times, response_times, turnaround_times, run_for, output_file):
+    with open(output_file, 'w') as f:
+        f.write(f"{process_count} processes\n")
+        f.write(f"Using {scheduling_type}\n")
+        for event in timeline:
+            f.write(event + '\n')
+        for time in range(run_for, run_for + (run_for - len(timeline))):
+            f.write(f"Time {time}: Idle\n")
+        f.write(f"Finished at time {run_for}\n")
+        
+        for name in wait_times:
+            f.write(f"{name} wait {wait_times[name]} turnaround {turnaround_times[name]} response {response_times[name]}\n")
 
 def main(file):
     process_count, run_for, scheduling_type, quantum, processes = parse_input(file)
@@ -172,11 +173,12 @@ def main(file):
     else:
         raise ValueError("Unknown scheduling type")
     
-    print_report(process_count, scheduling_type, timeline, wait_times, response_times, turnaround_times, run_for)
+    output_file = file.replace(".in", ".out")
+    print_report(process_count, scheduling_type, timeline, wait_times, response_times, turnaround_times, run_for, output_file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Simulate a CPU scheduler.")
-    parser.add_argument("filename", help="The input file containing process information.")
+    parser.add_argument("filename", help="The input file containing process information with a .in extension.")
     args = parser.parse_args()
     
     main(args.filename)
