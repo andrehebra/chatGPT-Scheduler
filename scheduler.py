@@ -18,16 +18,18 @@ def parse_input(file):
     process_count = int(lines[0].split()[1])
     run_for = int(lines[1].split()[1])
     scheduling_type = lines[2].split()[1]
+    quantum = int(lines[3].split()[1]) if scheduling_type == 'rr' else None
     processes = []
     
-    for i in range(3, 3 + process_count):
+    start_index = 4 if scheduling_type == 'rr' else 3
+    for i in range(start_index, start_index + process_count):
         parts = lines[i].split()
         name = parts[2]
         arrival = int(parts[4])
         burst = int(parts[6])
         processes.append(Process(name, arrival, burst))
     
-    return process_count, run_for, scheduling_type, processes
+    return process_count, run_for, scheduling_type, quantum, processes
 
 def fifo_scheduler(processes, run_for):
     processes.sort(key=lambda p: p.arrival)
@@ -39,7 +41,6 @@ def fifo_scheduler(processes, run_for):
     queue = deque()
     
     for time in range(run_for):
-        # Add new arrivals to the queue
         for process in processes:
             if process.arrival == time:
                 queue.append(process)
@@ -100,7 +101,7 @@ def sjf_scheduler(processes, run_for):
     
     return timeline, wait_times, response_times, turnaround_times
 
-def round_robin_scheduler(processes, run_for, quantum=2):
+def round_robin_scheduler(processes, run_for, quantum):
     processes.sort(key=lambda p: p.arrival)
     timeline = []
     current_time = 0
@@ -161,13 +162,13 @@ def print_report(process_count, scheduling_type, timeline, wait_times, response_
         print(f"{name} wait {wait_times[name]} turnaround {turnaround_times[name]} response {response_times[name]}")
 
 def main(file):
-    process_count, run_for, scheduling_type, processes = parse_input(file)
+    process_count, run_for, scheduling_type, quantum, processes = parse_input(file)
     if scheduling_type == 'fifo':
         timeline, wait_times, response_times, turnaround_times = fifo_scheduler(processes, run_for)
     elif scheduling_type == 'sjf':
         timeline, wait_times, response_times, turnaround_times = sjf_scheduler(processes, run_for)
     elif scheduling_type == 'rr':
-        timeline, wait_times, response_times, turnaround_times = round_robin_scheduler(processes, run_for)
+        timeline, wait_times, response_times, turnaround_times = round_robin_scheduler(processes, run_for, quantum)
     else:
         raise ValueError("Unknown scheduling type")
     
