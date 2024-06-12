@@ -63,12 +63,12 @@ def round_robin_scheduler(processes, run_for, quantum):
             current_process.remaining -= 1
             current_quantum += 1
             if response_times[current_process.name] == -1:
-                response_times[current_process.name] = time - current_process.arrival
+                response_times[current_process.name] = time - current_process.arrival - 1
 
             if current_process.remaining == 0:
                 current_process.end_time = time
                 timeline.append(f"Time {time:>4} : {current_process.name} finished")
-                turnaround_times[current_process.name] = time + 1 - current_process.arrival
+                turnaround_times[current_process.name] = time - current_process.arrival
                 completed_processes.add(current_process.name)
                 current_process = None
                 current_quantum = 0
