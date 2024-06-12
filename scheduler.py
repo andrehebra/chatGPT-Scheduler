@@ -32,122 +32,13 @@ def parse_input(file):
     return process_count, run_for, scheduling_type, quantum, processes
 
 def fifo_scheduler(processes, run_for):
-    processes.sort(key=lambda p: p.arrival)
-    timeline = []
-    current_time = 0
-    wait_times = {p.name: 0 for p in processes}
-    response_times = {p.name: 0 for p in processes}
-    turnaround_times = {p.name: 0 for p in processes}
-    queue = deque()
-    
-    for time in range(run_for):
-        for process in processes:
-            if process.arrival == time:
-                queue.append(process)
-                timeline.append(f"Time {time}: {process.name} arrived")
-        
-        if queue:
-            current_process = queue[0]
-            if current_process.start_time == -1:
-                current_process.start_time = time
-                response_times[current_process.name] = time - current_process.arrival
-                timeline.append(f"Time {time}: {current_process.name} selected (burst {current_process.burst})")
-            current_process.remaining -= 1
-            if current_process.remaining == 0:
-                current_process.end_time = time + 1
-                turnaround_times[current_process.name] = current_process.end_time - current_process.arrival
-                wait_times[current_process.name] = current_process.end_time - current_process.arrival - current_process.burst
-                timeline.append(f"Time {time + 1}: {current_process.name} finished")
-                queue.popleft()
-        else:
-            timeline.append(f"Time {time}: Idle")
-    
-    return timeline, wait_times, response_times, turnaround_times
+    return
 
 def sjf_scheduler(processes, run_for):
-    processes.sort(key=lambda p: p.arrival)
-    timeline = []
-    current_time = 0
-    wait_times = {p.name: 0 for p in processes}
-    response_times = {p.name: 0 for p in processes}
-    turnaround_times = {p.name: 0 for p in processes}
-    heap = []
-    arrived = []
-    finished = []
-    
-    for time in range(run_for):
-        for process in processes:
-            if process.arrival == time:
-                heapq.heappush(arrived, (process.burst, process))
-                timeline.append(f"Time {time}: {process.name} arrived")
-        
-        if heap:
-            current_process = heapq.heappop(heap)[1]
-            if current_process.start_time == -1:
-                current_process.start_time = time
-                response_times[current_process.name] = time - current_process.arrival
-                timeline.append(f"Time {time}: {current_process.name} selected (burst {current_process.remaining})")
-            current_process.remaining -= 1
-            if current_process.remaining == 0:
-                current_process.end_time = time + 1
-                turnaround_times[current_process.name] = current_process.end_time - current_process.arrival
-                wait_times[current_process.name] = current_process.end_time - current_process.arrival - current_process.burst
-                timeline.append(f"Time {time + 1}: {current_process.name} finished")
-                finished.append(current_process)
-            else:
-                heapq.heappush(heap, (current_process.remaining, current_process))
-        else:
-            timeline.append(f"Time {time}: Idle")
-    
-    return timeline, wait_times, response_times, turnaround_times
+    return
 
 def round_robin_scheduler(processes, run_for, quantum):
-    processes.sort(key=lambda p: p.arrival)
-    timeline = []
-    current_time = 0
-    wait_times = {p.name: 0 for p in processes}
-    response_times = {p.name: 0 for p in processes}
-    turnaround_times = {p.name: 0 for p in processes}
-    queue = deque()
-    arrived = []
-    for process in processes:
-        arrived.append(process)
-    
-    current_process = None
-    remaining_quantum = 0
-
-    for time in range(run_for):
-        # Add new arrivals to the queue
-        for process in arrived:
-            if process.arrival == time:
-                queue.append(process)
-                timeline.append(f"Time {time}: {process.name} arrived")
-        
-        if current_process is None or remaining_quantum == 0:
-            if current_process is not None and current_process.remaining > 0:
-                queue.append(current_process)
-            if queue:
-                current_process = queue.popleft()
-                if current_process.start_time == -1:
-                    current_process.start_time = time
-                    response_times[current_process.name] = time - current_process.arrival
-                timeline.append(f"Time {time}: {current_process.name} selected (burst {current_process.remaining})")
-                remaining_quantum = quantum
-        
-        if current_process is not None:
-            current_process.remaining -= 1
-            remaining_quantum -= 1
-            if current_process.remaining == 0:
-                current_process.end_time = time + 1
-                turnaround_times[current_process.name] = current_process.end_time - current_process.arrival
-                wait_times[current_process.name] = current_process.end_time - current_process.arrival - current_process.burst
-                timeline.append(f"Time {time + 1}: {current_process.name} finished")
-                current_process = None
-        
-        if not current_process and not queue:
-            timeline.append(f"Time {time}: Idle")
-    
-    return timeline, wait_times, response_times, turnaround_times
+    return
 
 def print_report(process_count, scheduling_type, timeline, wait_times, response_times, turnaround_times, run_for, output_file):
     with open(output_file, 'w') as f:

@@ -1,4 +1,3 @@
-fcfs
+fifo
 rr --> Andre
 sjf
-fcfs --> Andre
