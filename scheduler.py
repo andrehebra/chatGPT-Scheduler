@@ -104,8 +104,7 @@ def print_report(process_count, scheduling_type, quantum, timeline, wait_times, 
             f.write(f"Quantum {quantum:>3}\n\n")
         for event in timeline:
             f.write(event + '\n')
-        for time in range(len(timeline), run_for):
-            f.write(f"Time {time:>4} : Idle\n")
+        
         f.write(f"Finished at time {run_for:>3}\n\n")
         
         for name in wait_times:
