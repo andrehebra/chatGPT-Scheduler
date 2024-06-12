@@ -38,20 +38,74 @@ def sjf_scheduler(processes, run_for):
     return
 
 def round_robin_scheduler(processes, run_for, quantum):
-    return
+    timeline = []
+    wait_times = {p.name: 0 for p in processes}
+    response_times = {p.name: -1 for p in processes}
+    turnaround_times = {p.name: 0 for p in processes}
 
-def print_report(process_count, scheduling_type, timeline, wait_times, response_times, turnaround_times, run_for, output_file):
+    time = 0
+    ready_queue = deque()
+    processes.sort(key=lambda p: p.arrival)  # Sort processes by arrival time
+    process_index = 0
+    current_process = None
+    current_quantum = 0
+
+    while time < run_for:
+        # Add newly arrived processes to the ready queue
+        while process_index < len(processes) and processes[process_index].arrival == time:
+            process = processes[process_index]
+            ready_queue.append(process)
+            timeline.append(f"Time {time:>4} : {process.name} arrived")
+            process_index += 1
+
+        if current_process:
+            current_process.remaining -= 1
+            current_quantum += 1
+            if response_times[current_process.name] == -1:
+                response_times[current_process.name] = time - current_process.arrival
+
+            if current_process.remaining == 0:
+                current_process.end_time = time
+                timeline.append(f"Time {time:>4} : {current_process.name} finished")
+                turnaround_times[current_process.name] = time + 1 - current_process.arrival
+                current_process = None
+                current_quantum = 0
+            elif current_quantum == quantum:
+                ready_queue.append(current_process)
+                current_process = None
+                current_quantum = 0
+
+        if not current_process and ready_queue:
+            current_process = ready_queue.popleft()
+            if current_process.start_time == -1:
+                current_process.start_time = time
+            timeline.append(f"Time {time:>4} : {current_process.name} selected (burst {current_process.remaining:>3})")
+
+        if not current_process and not ready_queue and process_index >= len(processes):
+            timeline.append(f"Time {time:>4} : Idle")
+        
+        time += 1
+
+    # Calculate wait times
+    for process in processes:
+        wait_times[process.name] = turnaround_times[process.name] - process.burst
+
+    return timeline, wait_times, response_times, turnaround_times
+
+def print_report(process_count, scheduling_type, quantum, timeline, wait_times, response_times, turnaround_times, run_for, output_file):
     with open(output_file, 'w') as f:
         f.write(f"{process_count} processes\n")
         f.write(f"Using {scheduling_type}\n")
+        if scheduling_type == 'Round-Robin':
+            f.write(f"Quantum {quantum:>3}\n\n")
         for event in timeline:
             f.write(event + '\n')
-        for time in range(run_for, run_for + (run_for - len(timeline))):
-            f.write(f"Time {time}: Idle\n")
-        f.write(f"Finished at time {run_for}\n")
+        for time in range(len(timeline), run_for):
+            f.write(f"Time {time:>4} : Idle\n")
+        f.write(f"Finished at time {run_for:>3}\n\n")
         
         for name in wait_times:
-            f.write(f"{name} wait {wait_times[name]} turnaround {turnaround_times[name]} response {response_times[name]}\n")
+            f.write(f"{name} wait {wait_times[name]:>3} turnaround {turnaround_times[name]:>3} response {response_times[name]:>3}\n")
 
 def main(file):
     process_count, run_for, scheduling_type, quantum, processes = parse_input(file)
@@ -65,7 +119,7 @@ def main(file):
         raise ValueError("Unknown scheduling type")
     
     output_file = file.replace(".in", ".out")
-    print_report(process_count, scheduling_type, timeline, wait_times, response_times, turnaround_times, run_for, output_file)
+    print_report(process_count, scheduling_type, quantum, timeline, wait_times, response_times, turnaround_times, run_for, output_file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Simulate a CPU scheduler.")
