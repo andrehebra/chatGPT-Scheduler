@@ -49,8 +49,9 @@ def round_robin_scheduler(processes, run_for, quantum):
     process_index = 0
     current_process = None
     current_quantum = 0
+    completed_processes = set()
 
-    while time < run_for:
+    while time < run_for or ready_queue or current_process:
         # Add newly arrived processes to the ready queue
         while process_index < len(processes) and processes[process_index].arrival == time:
             process = processes[process_index]
@@ -68,6 +69,7 @@ def round_robin_scheduler(processes, run_for, quantum):
                 current_process.end_time = time
                 timeline.append(f"Time {time:>4} : {current_process.name} finished")
                 turnaround_times[current_process.name] = time + 1 - current_process.arrival
+                completed_processes.add(current_process.name)
                 current_process = None
                 current_quantum = 0
             elif current_quantum == quantum:
@@ -81,13 +83,15 @@ def round_robin_scheduler(processes, run_for, quantum):
                 current_process.start_time = time
             timeline.append(f"Time {time:>4} : {current_process.name} selected (burst {current_process.remaining:>3})")
 
-        if not current_process and not ready_queue and process_index >= len(processes):
+        if not current_process and not ready_queue and process_index >= len(processes) and time < run_for:
             timeline.append(f"Time {time:>4} : Idle")
         
         time += 1
 
     # Calculate wait times
     for process in processes:
+        if process.name not in completed_processes:
+            turnaround_times[process.name] = time - process.arrival
         wait_times[process.name] = turnaround_times[process.name] - process.burst
 
     return timeline, wait_times, response_times, turnaround_times
@@ -114,6 +118,7 @@ def main(file):
     elif scheduling_type == 'sjf':
         timeline, wait_times, response_times, turnaround_times = sjf_scheduler(processes, run_for)
     elif scheduling_type == 'rr':
+        scheduling_type = 'Round-Robin'
         timeline, wait_times, response_times, turnaround_times = round_robin_scheduler(processes, run_for, quantum)
     else:
         raise ValueError("Unknown scheduling type")
