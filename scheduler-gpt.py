@@ -31,8 +31,58 @@ def parse_input(file):
     
     return process_count, run_for, scheduling_type, quantum, processes
 
-def fifo_scheduler(processes, run_for):
-    return
+def fcfs_scheduler(processes, run_for):
+    timeline = []
+    wait_times = {p.name: 0 for p in processes}
+    response_times = {p.name: -1 for p in processes}
+    turnaround_times = {p.name: 0 for p in processes}
+    time = 0
+
+    queue = deque()
+    processes.sort(key=lambda p: p.arrival)
+    process_index = 0
+    current_process = None
+    
+    while time < run_for:
+        # Add newly arrived processes to the queue
+        while process_index < len(processes) and processes[process_index].arrival == time:
+            process = processes[process_index]
+            queue.append(process)
+            timeline.append(f"Time {time:>4} : {process.name} arrived")
+            process_index += 1
+        
+        if current_process:
+            current_process.remaining -= 1
+            if current_process.remaining == 0:
+                current_process.end_time = time
+                timeline.append(f"Time {time:>4} : {current_process.name} finished")
+                turnaround_times[current_process.name] = time - current_process.arrival
+                current_process = None
+    
+         # Select the next process from the queue if no current process
+        if not current_process and queue:
+            current_process = queue.popleft()
+             # If the process is starting for the first time, log the start time
+            if current_process.start_time == -1:
+                current_process.start_time = time
+                response_times[current_process.name] = time - current_process.arrival
+            timeline.append(f"Time {time:>4} : {current_process.name} selected (burst {current_process.remaining:>3})")
+
+         # Log idle time if no process is being executed and the queue is empty
+        if not current_process and not queue:
+            timeline.append(f"Time {time:>4} : Idle")
+        
+        time += 1
+
+    # Calculate wait times
+    for process in processes:
+        if process.end_time == -1:
+            process.end_time = run_for
+        # Calculate the turnaround time for each process
+        turnaround_times[process.name] = process.end_time - process.arrival
+        wait_times[process.name] = turnaround_times[process.name] - process.burst
+
+    return timeline, wait_times, response_times, turnaround_times
 
 def sjf_scheduler(processes, run_for):
     return
@@ -112,8 +162,8 @@ def print_report(process_count, scheduling_type, quantum, timeline, wait_times, 
 
 def main(file):
     process_count, run_for, scheduling_type, quantum, processes = parse_input(file)
-    if scheduling_type == 'fifo':
-        timeline, wait_times, response_times, turnaround_times = fifo_scheduler(processes, run_for)
+    if scheduling_type == 'fcfs':
+        timeline, wait_times, response_times, turnaround_times = fcfs_scheduler(processes, run_for)
     elif scheduling_type == 'sjf':
         timeline, wait_times, response_times, turnaround_times = sjf_scheduler(processes, run_for)
     elif scheduling_type == 'rr':
