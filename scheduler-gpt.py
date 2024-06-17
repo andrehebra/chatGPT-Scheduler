@@ -59,16 +59,16 @@ def fcfs_scheduler(processes, run_for):
                 turnaround_times[current_process.name] = time - current_process.arrival
                 current_process = None
     
-         # Select the next process from the queue if no current process
+        # Select the next process from the queue if no current process
         if not current_process and queue:
             current_process = queue.popleft()
-             # If the process is starting for the first time, log the start time
+            # If the process is starting for the first time, log the start time
             if current_process.start_time == -1:
                 current_process.start_time = time
                 response_times[current_process.name] = time - current_process.arrival
             timeline.append(f"Time {time:>4} : {current_process.name} selected (burst {current_process.remaining:>3})")
 
-         # Log idle time if no process is being executed and the queue is empty
+        # Log idle time if no process is being executed and the queue is empty
         if not current_process and not queue:
             timeline.append(f"Time {time:>4} : Idle")
         
@@ -84,8 +84,62 @@ def fcfs_scheduler(processes, run_for):
 
     return timeline, wait_times, response_times, turnaround_times
 
-def sjf_scheduler(processes, run_for):
-    return
+def srtf_scheduler(processes, run_for):
+    timeline = []
+    wait_times = {p.name: 0 for p in processes}
+    response_times = {p.name: -1 for p in processes}
+    turnaround_times = {p.name: 0 for p in processes}
+    time = 0
+
+    ready_queue = []
+    processes.sort(key=lambda p: p.arrival)
+    process_index = 0
+    current_process = None
+
+    while time < run_for:
+        # Add newly arrived processes to the ready queue
+        while process_index < len(processes) and processes[process_index].arrival == time:
+            process = processes[process_index]
+            heapq.heappush(ready_queue, (process.remaining, process.arrival, process))
+            timeline.append(f"Time {time:>4} : {process.name} arrived")
+            process_index += 1
+
+        if current_process:
+            current_process.remaining -= 1
+            if current_process.remaining == 0:
+                current_process.end_time = time
+                timeline.append(f"Time {time:>4} : {current_process.name} finished")
+                turnaround_times[current_process.name] = time - current_process.arrival
+                current_process = None
+
+        if not current_process and ready_queue:
+            _, _, current_process = heapq.heappop(ready_queue)
+            if current_process.start_time == -1:
+                current_process.start_time = time
+                response_times[current_process.name] = time - current_process.arrival
+            timeline.append(f"Time {time:>4} : {current_process.name} selected (burst {current_process.remaining:>3})")
+
+        if current_process:
+            if ready_queue and ready_queue[0][0] < current_process.remaining:
+                heapq.heappush(ready_queue, (current_process.remaining, current_process.arrival, current_process))
+                _, _, current_process = heapq.heappop(ready_queue)
+                if current_process.start_time == -1:
+                    current_process.start_time = time
+                    response_times[current_process.name] = time - current_process.arrival
+                timeline.append(f"Time {time:>4} : {current_process.name} selected (burst {current_process.remaining:>3})")
+        else:
+            if not ready_queue and time < run_for:
+                timeline.append(f"Time {time:>4} : Idle")
+
+        time += 1
+
+    for process in processes:
+        if process.end_time == -1:
+            process.end_time = run_for
+        turnaround_times[process.name] = process.end_time - process.arrival
+        wait_times[process.name] = turnaround_times[process.name] - process.burst
+
+    return timeline, wait_times, response_times, turnaround_times
 
 def round_robin_scheduler(processes, run_for, quantum):
     timeline = []
@@ -165,7 +219,7 @@ def main(file):
     if scheduling_type == 'fcfs':
         timeline, wait_times, response_times, turnaround_times = fcfs_scheduler(processes, run_for)
     elif scheduling_type == 'sjf':
-        timeline, wait_times, response_times, turnaround_times = sjf_scheduler(processes, run_for)
+        timeline, wait_times, response_times, turnaround_times = srtf_scheduler(processes, run_for)
     elif scheduling_type == 'rr':
         scheduling_type = 'Round-Robin'
         timeline, wait_times, response_times, turnaround_times = round_robin_scheduler(processes, run_for, quantum)
